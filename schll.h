@@ -192,7 +192,7 @@ schll_rueckgabe schll_ListeEintragHinzufuegen(schll_liste* karte, const char* na
 
 		memcpy(p->n_eintrag->wert, wert, wert_laenge);
 	}else{
-		p->n_eintrag->name = neuer_eintrag.name;
+		p->n_eintrag->wert = neuer_eintrag.wert;
 	}
 
 	karte->eintraege_l++;
