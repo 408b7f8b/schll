@@ -3,5 +3,5 @@ project(schll C)
 
 set(CMAKE_C_STANDARD 90)
 
-add_library(schll library.h)
+add_library(schll schll.h)
 SET_TARGET_PROPERTIES(schll PROPERTIES LINKER_LANGUAGE C)

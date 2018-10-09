@@ -3,8 +3,8 @@
  * Version 0.1
  */
 
-#ifndef MAP_LIBRARY_H
-#define MAP_LIBRARY_H
+#ifndef SCHLL_H
+#define SCHLL_H
 
 #ifdef __cplusplus
 extern "C" {
