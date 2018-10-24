@@ -57,7 +57,7 @@ schll_rueckgabe schll_ListeErstellen(schll_liste** karte);
  * const int free_name: wenn 1, Schlüssel der Einträge deallozieren
  * const int free_wert: wenn 1, Werte der Einträge deallozieren
  */
-schll_rueckgabe schll_ListeAufloesen(const schll_liste* karte, const int free_name, const int free_wert);
+schll_rueckgabe schll_ListeAufloesen(schll_liste** karte, const int free_name, const int free_wert);
 
 /*
  * Eintrag zu einer schll_liste hinzufügen
@@ -79,7 +79,7 @@ schll_rueckgabe schll_ListeEintragHinzufuegen(schll_liste* karte, const char* na
  * const int free_name: wenn 1, Schlüssel des Eintrags deallozieren
  * const int free_wert: wenn 1, Wert des Eintrags deallozieren
  */
-schll_rueckgabe schll_ListeEintragEntfernen(const schll_liste* karte, const char* name, const int free_name,
+schll_rueckgabe schll_ListeEintragEntfernen(schll_liste* karte, const char* name, const int free_name,
 											const int free_wert);
 
 /*
@@ -108,15 +108,20 @@ schll_liste* schll_ListeErstellenZeiger(){
 
 }
 
-schll_rueckgabe schll_ListeAufloesen(const schll_liste* karte, const int free_name, const int free_wert){
+schll_rueckgabe schll_ListeAufloesen(schll_liste** karte, const int free_name, const int free_wert){
 
-	if(karte == NULL)
+	if(karte == NULL){
 		return MAP_NULL;
+	}
 
-	schll_eintrag* p = karte->starteintrag;
+	if(*karte == NULL) {
+		return MAP_NULL;
+	}
+
+	schll_eintrag* p = (*karte)->starteintrag;
 
 	while(p != NULL) {
-		schll_eintrag* t= p->n_eintrag;
+		schll_eintrag* t = p->n_eintrag;
 
 		if(free_name){
 			free(p->name);
@@ -126,8 +131,13 @@ schll_rueckgabe schll_ListeAufloesen(const schll_liste* karte, const int free_na
 			free(p->wert);
 		}
 
+		free(p);
+
 		p = t;
 	}
+
+	free(*karte);
+	*karte = NULL;
 
 	return IO;
 
@@ -146,53 +156,53 @@ schll_rueckgabe schll_ListeEintragHinzufuegen(schll_liste* karte, const char* na
 	neuer_eintrag.wert = (void*)wert;
 	neuer_eintrag.n_eintrag = NULL;
 
-	schll_eintrag* p = karte->starteintrag;
+	schll_eintrag** p = &(karte->starteintrag);
 
-	while(p != NULL) {
-		if (p->name_l == neuer_eintrag.name_l) {
-			if (strncmp(p->name, neuer_eintrag.name, neuer_eintrag.name_l) == 0) {
+	while(*p != NULL) {
+		if ((*p)->name_l == neuer_eintrag.name_l) {
+			if (strncmp((*p)->name, neuer_eintrag.name, neuer_eintrag.name_l) == 0) {
 				return SCHL_VORHANDEN;
 			}
 		}
 
-		p = p->n_eintrag;
+		p = &((*p)->n_eintrag);
 	}
 
-	p->n_eintrag = (schll_eintrag*)calloc(1, sizeof(schll_eintrag));
+	(*p) = (schll_eintrag*)calloc(1, sizeof(schll_eintrag));
 
-	if(p->n_eintrag == NULL){
+	if((*p) == NULL){
 		return ALLOK_FEHLG;
 	}
 
-	p->n_eintrag->name_l = neuer_eintrag.name_l;
+	(*p)->name_l = neuer_eintrag.name_l;
 
 	if(name_kopieren){
-		p->n_eintrag->name = (char*)calloc(neuer_eintrag.name_l, 1);
+		(*p)->name = (char*)calloc(neuer_eintrag.name_l, 1);
 
-		if(p->n_eintrag->name == NULL){
-			free(p->n_eintrag);
+		if((*p)->name == NULL){
+			free(p);
 			return ALLOK_FEHLG;
 		}
 
-		strcat(p->n_eintrag->name, neuer_eintrag.name);
+		strcat((*p)->name, neuer_eintrag.name);
 	}else{
-		p->n_eintrag->name = neuer_eintrag.name;
+		(*p)->name = neuer_eintrag.name;
 	}
 
 	if(wert_kopieren){
-		p->n_eintrag->wert = (char*)calloc(wert_laenge, 1);
+		(*p)->wert = (char*)calloc(wert_laenge, 1);
 
-		if(p->n_eintrag->wert == NULL){
+		if((*p)->wert == NULL){
 			if(name_kopieren){
-				free(p->n_eintrag->name);
+				free((*p)->name);
 			}
-			free(p->n_eintrag);
+			free(p);
 			return ALLOK_FEHLG;
 		}
 
-		memcpy(p->n_eintrag->wert, wert, wert_laenge);
+		memcpy((*p)->wert, wert, wert_laenge);
 	}else{
-		p->n_eintrag->wert = neuer_eintrag.wert;
+		(*p)->wert = neuer_eintrag.wert;
 	}
 
 	karte->eintraege_l++;
@@ -200,7 +210,7 @@ schll_rueckgabe schll_ListeEintragHinzufuegen(schll_liste* karte, const char* na
 	return IO;
 }
 
-schll_rueckgabe schll_ListeEintragEntfernen(const schll_liste* karte, const char* name, const int free_name,
+schll_rueckgabe schll_ListeEintragEntfernen(schll_liste* karte, const char* name, const int free_name,
 											const int free_wert){
 
 	if(karte == NULL)
@@ -212,31 +222,40 @@ schll_rueckgabe schll_ListeEintragEntfernen(const schll_liste* karte, const char
 	if(karte->starteintrag == NULL)
 		return KEINE_EINTRAEGE;
 
+	schll_eintrag* p_ = NULL;
 	schll_eintrag* p = karte->starteintrag;
 
 	unsigned int l;
 	l = strlen(name)+1;
 
 	while(p != NULL) {
-		if (p->n_eintrag->name_l == l) {
-			if (strncmp(p->n_eintrag->name, name, l) == 0) {
-				schll_eintrag* t = p->n_eintrag->n_eintrag;
+		if (p->name_l == l) {
+			if (strncmp(p->name, name, l) == 0) {
+
+				if(p_ == NULL){
+					karte->starteintrag = karte->starteintrag->n_eintrag;
+				}else{
+					p_->n_eintrag = p->n_eintrag;
+				}
 
 				if(free_name){
-					free(p->n_eintrag->name);
+					free(p->name);
 				}
 
 				if(free_wert){
-					free(p->n_eintrag->wert);
+					free(p->wert);
 				}
 
-				p->n_eintrag = t;
+				free(p);
+				karte->eintraege_l--;
 
 				return IO;
 			}
 		}
 
+		p_ = p;
 		p = p->n_eintrag;
+
 	}
 
 	return KEIN_EINTRAG;
