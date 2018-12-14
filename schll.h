@@ -17,118 +17,118 @@ extern "C" {
 /*
  * Typen
  */
-typedef enum schll_rueckgabe {
-	IO, SCHL_VORHANDEN, MAP_NULL, EINTRAG_NIO, ALLOK_FEHLG, NAME_FEHLT, KEIN_EINTRAG, KEINE_EINTRAEGE
-} schll_rueckgabe;
+typedef enum schll_return_value {
+	OK, SCHLL_EXISTS, MAP_NULL, ALLOC_FAIL, NAME_MISSING, NO_ENTRY, NO_ENTRIES
+} schll_return_value;
 
-typedef struct schll_eintrag {
+typedef struct schll_entry {
 	char* name;
-	unsigned int name_l;
-	void* wert;
+	size_t name_l;
+	void* value;
 
-	struct schll_eintrag* n_eintrag;
-} schll_eintrag;
+	struct schll_entry* next_entry;
+} schll_entry;
 
-typedef struct schll_liste {
-	struct schll_eintrag* starteintrag;
-	unsigned int eintraege_l;
-} schll_liste;
+typedef struct schll_list {
+	struct schll_entry* first_entry;
+	unsigned int number_entries;
+} schll_list;
 
 /*
  * Deklarationen
  */
 
 /*
- * Konstruieren mit direkter Rückgabe, alloziert eine schll_liste
+ * Konstruieren mit direkter Rückgabe, alloziert eine schll_list
  * Muss aufgelöst werden
  */
-schll_liste* schll_ListeErstellenZeiger();
+schll_list* schll_MakeListPointer();
 
 /*
- * Konstruieren mit Rückgabe über extern gegebenen Zeiger, alloziert eine schll_liste
+ * Konstruieren mit Rückgabe über extern gegebenen Zeiger, alloziert eine schll_list
  * Muss aufgelöst werden
- * schll_liste** karte: Zeiger auf schll_liste-Zeiger
+ * schll_list** karte: Zeiger auf schll_list-Zeiger
  */
-schll_rueckgabe schll_ListeErstellen(schll_liste** karte);
+schll_return_value schll_MakeList(schll_list** list);
 
 /*
- * Auflösen einer schll_liste
- * schll_liste* karte: Zeiger auf azuflösende schll_liste
+ * Auflösen einer schll_list
+ * schll_list* karte: Zeiger auf azuflösende schll_list
  * const int free_name: wenn 1, Schlüssel der Einträge deallozieren
  * const int free_wert: wenn 1, Werte der Einträge deallozieren
  */
-schll_rueckgabe schll_ListeAufloesen(schll_liste** karte, const int free_name, const int free_wert);
+schll_return_value schll_DeleteList(schll_list** list, int free_names, int free_values);
 
 /*
- * Eintrag zu einer schll_liste hinzufügen
- * schll_liste* karte: Zeiger auf schll_liste, zu der der Eintrag hinzugefügt werden soll
+ * Eintrag zu einer schll_list hinzufügen
+ * schll_list* karte: Zeiger auf schll_list, zu der der Eintrag hinzugefügt werden soll
  * const char* name: Schlüssel des Eintrags
  * const int name_kopieren: Schlüssel kopieren? Muss aufgelöst werden.
- * const void* wert: Wert für den Eintrag
+ * const void* value: Wert für den Eintrag
  * const int wert_kopieren: Wert kopieren?
  * const unsigned int wert_laenge: Falls der Wert kopiert werden soll, ist hier die Länge des zu allozierenden Speicherplatzes einzutragen
  */
-schll_rueckgabe schll_ListeEintragHinzufuegen(schll_liste* karte, const char* name, const int name_kopieren,
-											  const void* wert, const int wert_kopieren,
-											  const unsigned int wert_laenge);
+schll_return_value schll_addEntry(schll_list* list, const char* name, int copy_name,
+								  const void* value, int copy_value,
+								  size_t value_size);
 
 /*
- * Eintrag aus einer schll_liste entfernen
- * const schll_liste* karte: Zeiger auf schll_liste, aus der der Eintrag entfernt werden soll
+ * Eintrag aus einer schll_list entfernen
+ * const schll_list* karte: Zeiger auf schll_list, aus der der Eintrag entfernt werden soll
  * const char* name: Schlüssel des Eintrags
  * const int free_name: wenn 1, Schlüssel des Eintrags deallozieren
  * const int free_wert: wenn 1, Wert des Eintrags deallozieren
  */
-schll_rueckgabe schll_ListeEintragEntfernen(schll_liste* karte, const char* name, const int free_name,
-											const int free_wert);
+schll_return_value schll_removeEntry(schll_list* list, const char* name, int free_name,
+									 int free_value);
 
 /*
  * Zeiger auf Wert holen
- * const schll_liste* karte: Zeiger auf schll_liste, aus der der Wert geholt werden soll
+ * const schll_list* karte: Zeiger auf schll_list, aus der der Wert geholt werden soll
  * void** v: Zeiger auf den Zeiger, der den Wert angeben soll
  * const char* name: Schlüssel des Eintrags
  */
-schll_rueckgabe schll_ListeWertHolen(const schll_liste* karte, void** v, const char* name);
+schll_return_value schll_getValue(const schll_list* list, void** value, const char* name);
 
 /*
  * Zeiger auf Wert direkt ausgeben
- * const schll_liste* karte: Zeiger auf schll_liste, aus der der Wert geholt werden soll
+ * const schll_list* karte: Zeiger auf schll_list, aus der der Wert geholt werden soll
  * const char* name: Schlüssel des Eintrags
  */
-void* schll_ListeWertHolenZeiger(const schll_liste* karte, const char* name);
+void* schll_getValuePointer(const schll_list* list, const char* name);
 
 /*
  * Definitionen
  */
 
-schll_liste* schll_ListeErstellenZeiger(){
+schll_list* schll_MakeListPointer(){
 
-	schll_liste* ret = (schll_liste*)calloc(1, sizeof(schll_liste));
+	schll_list* ret = (schll_list*)calloc(1, sizeof(schll_list));
 	return ret;
 
 }
 
-schll_rueckgabe schll_ListeAufloesen(schll_liste** karte, const int free_name, const int free_wert){
+schll_return_value schll_DeleteList(schll_list** list, const int free_names, const int free_values){
 
-	if(karte == NULL){
+	if(list == NULL){
 		return MAP_NULL;
 	}
 
-	if(*karte == NULL) {
+	if(*list == NULL) {
 		return MAP_NULL;
 	}
 
-	schll_eintrag* p = (*karte)->starteintrag;
+	schll_entry* p = (*list)->first_entry;
 
 	while(p != NULL) {
-		schll_eintrag* t = p->n_eintrag;
+		schll_entry* t = p->next_entry;
 
-		if(free_name){
+		if(free_names){
 			free(p->name);
 		}
 
-		if(free_wert){
-			free(p->wert);
+		if(free_values){
+			free(p->value);
 		}
 
 		free(p);
@@ -136,52 +136,52 @@ schll_rueckgabe schll_ListeAufloesen(schll_liste** karte, const int free_name, c
 		p = t;
 	}
 
-	free(*karte);
-	*karte = NULL;
+	free(*list);
+	*list = NULL;
 
-	return IO;
+	return OK;
 
 }
 
-schll_rueckgabe schll_ListeEintragHinzufuegen(schll_liste* karte, const char* name, const int name_kopieren,
-											  const void* wert, const int wert_kopieren, const unsigned int wert_laenge){
+schll_return_value schll_addEntry(schll_list* list, const char* name, const int copy_name,
+								  const void* value, const int copy_value, size_t value_size){
 
-	if(karte == NULL)
+	if(list == NULL)
 		return MAP_NULL;
 
 
-	schll_eintrag neuer_eintrag;
+	schll_entry neuer_eintrag;
 	neuer_eintrag.name = (char*)name;
 	neuer_eintrag.name_l = strlen(name)+1;
-	neuer_eintrag.wert = (void*)wert;
-	neuer_eintrag.n_eintrag = NULL;
+	neuer_eintrag.value = (void*)value;
+	neuer_eintrag.next_entry = NULL;
 
-	schll_eintrag** p = &(karte->starteintrag);
+	schll_entry** p = &(list->first_entry);
 
 	while(*p != NULL) {
 		if ((*p)->name_l == neuer_eintrag.name_l) {
 			if (strncmp((*p)->name, neuer_eintrag.name, neuer_eintrag.name_l) == 0) {
-				return SCHL_VORHANDEN;
+				return SCHLL_EXISTS;
 			}
 		}
 
-		p = &((*p)->n_eintrag);
+		p = &((*p)->next_entry);
 	}
 
-	(*p) = (schll_eintrag*)calloc(1, sizeof(schll_eintrag));
+	(*p) = (schll_entry*)calloc(1, sizeof(schll_entry));
 
 	if((*p) == NULL){
-		return ALLOK_FEHLG;
+		return ALLOC_FAIL;
 	}
 
 	(*p)->name_l = neuer_eintrag.name_l;
 
-	if(name_kopieren){
+	if(copy_name){
 		(*p)->name = (char*)calloc(neuer_eintrag.name_l, 1);
 
 		if((*p)->name == NULL){
 			free(p);
-			return ALLOK_FEHLG;
+			return ALLOC_FAIL;
 		}
 
 		strcat((*p)->name, neuer_eintrag.name);
@@ -189,43 +189,43 @@ schll_rueckgabe schll_ListeEintragHinzufuegen(schll_liste* karte, const char* na
 		(*p)->name = neuer_eintrag.name;
 	}
 
-	if(wert_kopieren){
-		(*p)->wert = (char*)calloc(wert_laenge, 1);
+	if(copy_value){
+		(*p)->value = (char*)calloc(value_size, 1);
 
-		if((*p)->wert == NULL){
-			if(name_kopieren){
+		if((*p)->value == NULL){
+			if(copy_name){
 				free((*p)->name);
 			}
 			free(p);
-			return ALLOK_FEHLG;
+			return ALLOC_FAIL;
 		}
 
-		memcpy((*p)->wert, wert, wert_laenge);
+		memcpy((*p)->value, value, value_size);
 	}else{
-		(*p)->wert = neuer_eintrag.wert;
+		(*p)->value = neuer_eintrag.value;
 	}
 
-	karte->eintraege_l++;
+	list->number_entries++;
 
-	return IO;
+	return OK;
 }
 
-schll_rueckgabe schll_ListeEintragEntfernen(schll_liste* karte, const char* name, const int free_name,
-											const int free_wert){
+schll_return_value schll_removeEntry(schll_list* list, const char* name, const int free_name,
+									 const int free_value){
 
-	if(karte == NULL)
+	if(list == NULL)
 		return MAP_NULL;
 
 	if(name == NULL)
-		return NAME_FEHLT;
+		return NAME_MISSING;
 
-	if(karte->starteintrag == NULL)
-		return KEINE_EINTRAEGE;
+	if(list->first_entry == NULL)
+		return NO_ENTRIES;
 
-	schll_eintrag* p_ = NULL;
-	schll_eintrag* p = karte->starteintrag;
+	schll_entry* p_ = NULL;
+	schll_entry* p = list->first_entry;
 
-	unsigned int l;
+	size_t l;
 	l = strlen(name)+1;
 
 	while(p != NULL) {
@@ -233,65 +233,65 @@ schll_rueckgabe schll_ListeEintragEntfernen(schll_liste* karte, const char* name
 			if (strncmp(p->name, name, l) == 0) {
 
 				if(p_ == NULL){
-					karte->starteintrag = karte->starteintrag->n_eintrag;
+					list->first_entry = list->first_entry->next_entry;
 				}else{
-					p_->n_eintrag = p->n_eintrag;
+					p_->next_entry = p->next_entry;
 				}
 
 				if(free_name){
 					free(p->name);
 				}
 
-				if(free_wert){
-					free(p->wert);
+				if(free_value){
+					free(p->value);
 				}
 
 				free(p);
-				karte->eintraege_l--;
+				list->number_entries--;
 
-				return IO;
+				return OK;
 			}
 		}
 
 		p_ = p;
-		p = p->n_eintrag;
+		p = p->next_entry;
 
 	}
 
-	return KEIN_EINTRAG;
+	return NO_ENTRY;
 
 }
 
-schll_rueckgabe schll_ListeWertHolen(const schll_liste* karte, void** v, const char* name){
+schll_return_value schll_getValue(const schll_list* list, void** value, const char* name){
 
-	schll_eintrag* e;
+	schll_entry* e;
 	e = NULL;
 
-	unsigned int l;
+	size_t l;
 	l = strlen(name)+1;
 
-	schll_eintrag* p = karte->starteintrag;
+	schll_entry* p = list->first_entry;
 
 	while(p != NULL) {
 		if (p->name_l == l) {
 			if (strncmp(p->name, name, l) == 0) {
-				*v = p->wert;
-				return IO;
+				*value = p->value;
+				return OK;
 			}
 		}
 
-		p = p->n_eintrag;
+		p = p->next_entry;
 	}
 
-	return KEIN_EINTRAG;
+	return NO_ENTRY;
 }
 
-void* schll_ListeWertHolenZeiger(const schll_liste* karte, const char* name){
+void* schll_getValuePointer(const schll_list* list, const char* name){
 
 	void* v;
 	v = NULL;
 
-	if(schll_ListeWertHolen(karte, &v, name) == IO){
+	if(schll_getValue(list, &v, name) == OK){
 		return v;
 	}else{
 		return NULL;
